@@ -19,6 +19,8 @@ defmodule ElixirAgi.Mixfile do
 
   defp deps do
     [
+      {:ex_doc, "~> 0.7", only: :dev},
+      {:earmark, "~> 0.1", only: :dev}
     ]
   end
 end
