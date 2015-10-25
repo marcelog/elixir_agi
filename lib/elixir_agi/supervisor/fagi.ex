@@ -6,9 +6,9 @@ defmodule ElixirAgi.Supervisor.FastAgi do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def new(name, host, port) do
+  def new(app_module, name, host, port) do
     Supervisor.start_child __MODULE__, [%{
-      name: name, host: host, port: port
+      name: name, host: host, port: port, app_module: app_module
     }]
   end
 

@@ -1,6 +1,8 @@
 defmodule ElixirAgi.Agi do
-  use GenServer
   require Logger
+  alias ElixirAgi.Agi.Result, as: Result
+  use GenServer
+  use Behaviour
   defstruct \
     reader: nil,
     io_init: nil,
@@ -35,6 +37,38 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  Closes an AGI socket.
+  """
+  @spec close(GenServer.server) :: :ok
+  def close(server) do
+    GenServer.call server, :close
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_answer
+  """
+  @spec answer(GenServer.server) :: Result.t
+  def answer(server) do
+    exec server, "ANSWER"
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_hangup
+  """
+  @spec hangup(GenServer.server, String.t) :: Result.t
+  def hangup(server, channel \\ "") do
+    exec server, "HANGUP", [channel]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
+  """
+  @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
+  def exec(server, application, args \\ []) do
+    GenServer.call server, {:run, "EXEC", [application|args]}
+  end
+
+  @doc """
   GenServer callback
   """
   @spec init(t) :: {:ok, state}
@@ -49,6 +83,25 @@ defmodule ElixirAgi.Agi do
   """
   @spec handle_call(term, term, state) ::
     {:noreply, state} | {:reply, term, state}
+  def handle_call(:close, _from, state) do
+    {:stop, :normal, :ok, state}
+  end
+
+  def handle_call({:run, cmd, args}, _from, state) do
+    args = for a <- args, do: ["\"", a, "\" "]
+    cmd = ["\"", cmd, "\" "|args]
+    :ok = write state.info.writer, cmd
+    log :debug, "sending: #{inspect cmd}"
+    line = read state.info.reader
+    if line === :eof do
+      {:stop, :normal, state}
+    else
+      log :debug, "response: #{line}"
+      result = Result.new line
+      {:reply, result, state}
+    end
+  end
+
   def handle_call(message, _from, state) do
     log :warn, "unknown call: #{inspect message}"
     {:reply, :not_implemented, state}
@@ -72,6 +125,9 @@ defmodule ElixirAgi.Agi do
       :eof -> {:stop, :normal, state}
       vars ->
         log :debug, "read variables: #{inspect vars}"
+        {:ok, _} = :erlang.apply(
+          state.info.app_module, :start_link, [self]
+        )
         {:noreply, state}
     end
   end
@@ -109,6 +165,11 @@ defmodule ElixirAgi.Agi do
         vars = Map.put vars, String.strip(k), String.strip(v)
         read_variables reader, vars
     end
+  end
+
+  defp write(writer, data) do
+    :ok = writer.([data, "\n"])
+    :ok
   end
 
   defp read(reader) do

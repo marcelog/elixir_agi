@@ -5,7 +5,8 @@ defmodule ElixirAgi.FastAgi do
   defstruct \
     name: nil,
     host: nil,
-    port: nil
+    port: nil,
+    app_module: nil
 
   @type t :: ElixirAgi.FastAgi
   @typep state :: Map.t
@@ -112,14 +113,16 @@ defmodule ElixirAgi.FastAgi do
         end
 
         writer = fn(write_data) ->
-          :ok = :gen_tcp.send write_data
+          :ok = :gen_tcp.send socket, write_data
         end
 
         io_close = fn() ->
           :ok = :gen_tcp.close socket
         end
 
-        {:ok, _} = Sup.new io_init, reader, writer, io_close
+        {:ok, _} = Sup.new(
+          state.info.app_module, io_init, reader, writer, io_close
+        )
         state
       {:error, :timeout} ->
         send self, :accept
