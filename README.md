@@ -54,7 +54,7 @@ it will be linked to the AGI process that is handling the connection.
 
 # Sample AGI Application
 
-```
+```elixir
 defmodule MyAppModule do
   use GenServer
   alias ElixirAgi.Agi, as: Agi
