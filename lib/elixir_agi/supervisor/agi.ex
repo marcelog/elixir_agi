@@ -59,6 +59,7 @@ defmodule ElixirAgi.Supervisor.Agi do
   """
   @spec init([]) :: {:ok, tuple}
   def init([]) do
+    Logger.debug "ElixirAgi: Starting AGI supervisor"
     children = [
       worker(ElixirAgi.Agi, [], restart: :temporary)
     ]

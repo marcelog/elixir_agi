@@ -32,7 +32,7 @@ defmodule ElixirAgi.FastAgi do
   defmacro log(level, message) do
     quote do
       state = var! state
-      Logger.unquote(level)("FastAGI: #{state.info.name} #{unquote(message)}")
+      Logger.unquote(level)("ElixirAgi FastAGI: #{state.info.name} #{unquote(message)}")
     end
   end
 
@@ -65,6 +65,12 @@ defmodule ElixirAgi.FastAgi do
   """
   @spec init(t) :: {:ok, state}
   def init(info) do
+    state = %{
+      clients: [],
+      info: info,
+      socket: nil
+    }
+    log :debug, "starting FastAGI server: #{inspect info}"
     case :inet.parse_ipv4_address to_char_list(info.host) do
       {:ok, address} ->
         case :gen_tcp.listen(info.port, [
@@ -74,11 +80,7 @@ defmodule ElixirAgi.FastAgi do
         ]) do
           {:ok, socket} ->
             send self, :accept
-            {:ok, %{
-              clients: [],
-              info: info,
-              socket: socket
-            }}
+            {:ok, %{state | socket: socket}}
           {:error, e} -> {:stop, e}
         end
       {:error, e} -> {:stop, e}

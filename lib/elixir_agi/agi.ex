@@ -33,7 +33,7 @@ defmodule ElixirAgi.Agi do
   defmacro log(level, message) do
     quote do
       state = var! state
-      Logger.unquote(level)("AGI: #{unquote(message)}")
+      Logger.unquote(level)("ElixirAgi AGI: #{unquote(message)}")
     end
   end
 

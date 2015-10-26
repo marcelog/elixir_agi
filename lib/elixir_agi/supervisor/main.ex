@@ -31,6 +31,7 @@ defmodule ElixirAgi.Supervisor.Main do
   """
   @spec init([]) :: {:ok, tuple}
   def init([]) do
+    Logger.debug "ElixirAgi: Starting main supervisor"
     children = [
       supervisor(ElixirAgi.Supervisor.Agi, [], [
         restart: :permanent,

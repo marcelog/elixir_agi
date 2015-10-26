@@ -20,6 +20,7 @@ defmodule ElixirAgi do
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
+    Logger.debug "ElixirAgi: Starting app"
 
     children = [
       supervisor(ElixirAgi.Supervisor.Main, [])

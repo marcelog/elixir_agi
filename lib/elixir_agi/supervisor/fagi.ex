@@ -47,6 +47,7 @@ defmodule ElixirAgi.Supervisor.FastAgi do
   """
   @spec init([]) :: {:ok, tuple}
   def init([]) do
+    Logger.debug "ElixirAgi: Starting FastAGI supervisor"
     children = [
       worker(ElixirAgi.FastAgi, [], restart: :transient)
     ]
