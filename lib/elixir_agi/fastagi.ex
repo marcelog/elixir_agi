@@ -23,6 +23,7 @@ defmodule ElixirAgi.FastAgi do
     name: nil,
     host: nil,
     port: nil,
+    backlog: 5,
     app_module: nil
 
   @type t :: ElixirAgi.FastAgi
@@ -68,7 +69,8 @@ defmodule ElixirAgi.FastAgi do
       {:ok, address} ->
         case :gen_tcp.listen(info.port, [
           :binary, {:ip, address}, {:port, info.port},
-          :inet, {:active, :false}, {:packet, :line}, {:reuseaddr, true}
+          :inet, {:active, :false}, {:packet, :line},
+          {:reuseaddr, true}, {:backlog, info.backlog}
         ]) do
           {:ok, socket} ->
             send self, :accept

@@ -29,10 +29,16 @@ defmodule ElixirAgi.Supervisor.FastAgi do
   @doc """
   Starts a supervised AGI application.
   """
-  @spec new(module, atom, String.t, Integer.t) :: Supervisor.on_start_child
-  def new(app_module, name, host, port) do
-    Supervisor.start_child __MODULE__, [%{
-      name: name, host: host, port: port, app_module: app_module
+  @spec new(
+    module, atom, String.t, Integer.t, Integer.t
+  ) :: Supervisor.on_start_child
+  def new(app_module, name, host, port, backlog) do
+    Supervisor.start_child __MODULE__, [%ElixirAgi.FastAgi{
+      name: name,
+      host: host,
+      port: port,
+      backlog: backlog,
+      app_module: app_module
     }]
   end
 
