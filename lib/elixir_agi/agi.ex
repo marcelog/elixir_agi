@@ -78,6 +78,34 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_get+full+variable
+  """
+  @spec get_full_variable(GenServer.server, String.t) :: Result.t
+  def get_full_variable(server, name) do
+    result = GenServer.call(
+      server, {:run, "GET", ["FULL", "VARIABLE", "${#{name}}"]}
+    )
+    if result.result === "1" do
+      [_, var] = Regex.run ~r/\(([^\)]*)\)/, hd(result.extra)
+      %Result{result | extra: var}
+    else
+      %Result{result | extra: nil}
+    end
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Application_Dial
+  """
+  @spec dial(
+    GenServer.server, String.t, non_neg_integer(), [String.t]
+  ) :: Result.t
+  def dial(server, dial_string, timeout_seconds, options) do
+    exec server, "DIAL", [
+      dial_string, to_string(timeout_seconds), Enum.join(options, ",")
+    ]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
