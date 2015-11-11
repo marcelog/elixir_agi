@@ -78,6 +78,16 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_set+variable
+  """
+  @spec set_variable(GenServer.server, String.t, String.t) :: Result.t
+  def set_variable(server, name, value) do
+    GenServer.call(
+      server, {:run, "SET", ["VARIABLE", "#{name}", "#{value}"]}
+    )
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_get+full+variable
   """
   @spec get_full_variable(GenServer.server, String.t) :: Result.t
@@ -108,9 +118,9 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
-  @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
-  def exec(server, application, args \\ []) do
-    GenServer.call server, {:run, "EXEC", [application|args]}
+  @spec exec(GenServer.server, String.t, [String.t], Integer.t) :: Result.t
+  def exec(server, application, args \\ [], timeout \\ 5000) do
+    GenServer.call server, {:run, "EXEC", [application|args]}, timeout
   end
 
   @doc """
