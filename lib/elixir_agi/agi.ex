@@ -21,6 +21,7 @@ defmodule ElixirAgi.Agi do
   use GenServer
   use Behaviour
   defstruct \
+    app_module: nil,
     reader: nil,
     io_init: nil,
     io_close: nil,
