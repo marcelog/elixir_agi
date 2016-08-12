@@ -61,7 +61,7 @@ defmodule MyAppModule do
   require Logger
 
   def start_link(agi, initial_state) do
-    GenServer.start_link __MODULE__, agi
+    GenServer.start_link __MODULE__, [agi, initial_state]
   end
 
   def init([agi, state]) do
