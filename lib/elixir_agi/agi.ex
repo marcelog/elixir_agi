@@ -19,9 +19,9 @@ defmodule ElixirAgi.Agi do
   require Logger
   alias ElixirAgi.Agi.Result, as: Result
   use GenServer
-  use Behaviour
   defstruct \
     app_module: nil,
+    app_state: nil,
     reader: nil,
     io_init: nil,
     io_close: nil,
@@ -182,7 +182,7 @@ defmodule ElixirAgi.Agi do
       vars ->
         log :debug, "read variables: #{inspect vars}"
         {:ok, _} = :erlang.apply(
-          state.info.app_module, :start_link, [self]
+          state.info.app_module, :start_link, [self, state.info.app_state]
         )
         {:noreply, state}
     end

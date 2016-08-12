@@ -29,28 +29,37 @@ defmodule ElixirAgi.Supervisor.Agi do
   @doc """
   Starts a supervised AGI application.
   """
-  @spec new(ElixirAgi.Agi.t) :: Supervisor.on_start_child
-  def new(app_module) do
+  @spec new(ElixirAgi.Agi.t, any) :: Supervisor.on_start_child
+  def new(app_module, state) do
     Supervisor.start_child __MODULE__, [%{
       reader: fn() -> IO.gets "" end,
       writer: fn(data) -> IO.puts data end,
       io_init: fn() -> :ok end,
       io_close: fn() -> :ok end,
-      app_module: app_module
+      app_module: app_module,
+      app_state: state
     }]
   end
 
   @doc """
   Starts a supervised AGI application.
   """
-  @spec new(ElixirAgi.Agi.t) :: Supervisor.on_start_child
-  def new(app_module, io_init, reader, writer, io_close) do
+  @spec new(
+    ElixirAgi.Agi.t,
+    any,
+    function,
+    function,
+    function,
+    function
+  ) :: Supervisor.on_start_child
+  def new(app_module, state, io_init, reader, writer, io_close) do
     Supervisor.start_child __MODULE__, [%{
       reader: reader,
       writer: writer,
       io_init: io_init,
       io_close: io_close,
-      app_module: app_module
+      app_module: app_module,
+      app_state: state
     }]
   end
 

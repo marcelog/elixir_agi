@@ -44,7 +44,7 @@ exten => _X.,n,AGI(agi://192.168.1.22:4444)
 And then in your elixir node, you can start the listener like this:
 
 ```elixir
-  ElixirAgi.Supervisor.FastAgi.new MyAppModule, :my_server_name, "0.0.0.0", 4444
+  ElixirAgi.Supervisor.FastAgi.new MyAppModule, %{initial_state: []}, :my_server_name, "0.0.0.0", 4444, 10
 ```
 
 `MyAppModule` must have a `start_link` function, and must return `{:ok, pid}` so
@@ -60,7 +60,7 @@ defmodule MyAppModule do
   alias ElixirAgi.Agi, as: Agi
   require Logger
 
-  def start_link(agi) do
+  def start_link(agi, initial_state) do
     GenServer.start_link __MODULE__, agi
   end
 

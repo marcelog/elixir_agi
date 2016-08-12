@@ -24,7 +24,8 @@ defmodule ElixirAgi.FastAgi do
     host: nil,
     port: nil,
     backlog: 5,
-    app_module: nil
+    app_module: nil,
+    app_state: nil
 
   @type t :: ElixirAgi.FastAgi
   @typep state :: Map.t
@@ -142,7 +143,8 @@ defmodule ElixirAgi.FastAgi do
         end
 
         {:ok, _} = Sup.new(
-          state.info.app_module, io_init, reader, writer, io_close
+          state.info.app_module, state.info.app_state,
+          io_init, reader, writer, io_close
         )
         state
       {:error, :timeout} ->
