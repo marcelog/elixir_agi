@@ -14,7 +14,7 @@ To use it in your Mix projects, first add it as a dependency:
 
 ```elixir
 def deps do
-  [{:elixir_agi, "~> 0.0.1"}]
+  [{:elixir_agi, "~> 0.0.3"}]
 end
 ```
 Then run mix deps.get to install it.
@@ -64,8 +64,8 @@ defmodule MyAppModule do
     GenServer.start_link __MODULE__, agi
   end
 
-  def init(agi) do
-    {:ok, %{agi: agi}, 0}
+  def init([agi, state]) do
+    {:ok, %{agi: agi, state: state}, 0}
   end
 
   def handle_info(:timeout, state) do
