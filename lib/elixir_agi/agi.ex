@@ -1,7 +1,6 @@
 defmodule ElixirAgi.Agi do
   @moduledoc """
-  This module handles the AGI implementation by reading and writing to/from
-  the source.
+  This module represents an AGI application
 
   Copyright 2015 Marcelo Gornstein <marcelog@gmail.com>
 
@@ -17,8 +16,10 @@ defmodule ElixirAgi.Agi do
   limitations under the License.
   """
   require Logger
-  alias ElixirAgi.Agi.Result, as: Result
+  alias ElixirAgi.Agi.Result
+  alias ElixirAgi.Agi.Proto
   use GenServer
+
   defstruct \
     app_module: nil,
     app_state: nil,
@@ -67,7 +68,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec answer(GenServer.server) :: Result.t
   def answer(server) do
-    exec server, "ANSWER"
+    run_generic server, :answer
   end
 
   @doc """
@@ -75,7 +76,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec hangup(GenServer.server, String.t) :: Result.t
   def hangup(server, channel \\ "") do
-    exec server, "HANGUP", [channel]
+    run_generic server, :hangup, [channel]
   end
 
   @doc """
@@ -83,9 +84,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec set_variable(GenServer.server, String.t, String.t) :: Result.t
   def set_variable(server, name, value) do
-    GenServer.call(
-      server, {:run, "SET", ["VARIABLE", "#{name}", "#{value}"]}
-    )
+    run_generic server, :set_variable, [name, value]
   end
 
   @doc """
@@ -93,15 +92,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec get_full_variable(GenServer.server, String.t) :: Result.t
   def get_full_variable(server, name) do
-    result = GenServer.call(
-      server, {:run, "GET", ["FULL", "VARIABLE", "${#{name}}"]}
-    )
-    if result.result === "1" do
-      [_, var] = Regex.run ~r/\(([^\)]*)\)/, hd(result.extra)
-      %Result{result | extra: var}
-    else
-      %Result{result | extra: nil}
-    end
+    run_generic server, :get_full_variable, [name]
   end
 
   @doc """
@@ -111,9 +102,7 @@ defmodule ElixirAgi.Agi do
     GenServer.server, String.t, non_neg_integer(), [String.t]
   ) :: Result.t
   def dial(server, dial_string, timeout_seconds, options) do
-    exec server, "DIAL", [
-      dial_string, to_string(timeout_seconds), Enum.join(options, ",")
-    ]
+    run_generic server, :dial, [dial_string, timeout_seconds, options]
   end
 
   @doc """
@@ -121,7 +110,11 @@ defmodule ElixirAgi.Agi do
   """
   @spec exec(GenServer.server, String.t, [String.t], Integer.t) :: Result.t
   def exec(server, application, args \\ [], timeout \\ 5000) do
-    GenServer.call server, {:run, "EXEC", [application|args]}, timeout
+    run_generic server, :exec, [application, args]
+  end
+
+  defp run_generic(server, command, args \\ [], timeout \\ 5000) do
+    GenServer.call server, {:run_generic, command, args}, timeout
   end
 
   @doc """
@@ -143,23 +136,17 @@ defmodule ElixirAgi.Agi do
     {:stop, :normal, :ok, state}
   end
 
-  def handle_call({:run, cmd, args}, _from, state) do
-    args = for a <- args, do: ["\"", a, "\" "]
-    cmd = ["\"", cmd, "\" "|args]
-    :ok = write state.info.writer, cmd
-    log :debug, "sending: #{inspect cmd}"
-    line = read state.info.reader
-    if line === :eof do
-      {:stop, :normal, state}
-    else
-      log :debug, "response: #{line}"
-      result = Result.new line
-      {:reply, result, state}
+  def handle_call({:run_generic, command, args}, _from, state) do
+    case :erlang.apply(
+      Proto, command, [state.info.reader, state.info.writer] ++ args
+    ) do
+      :eof -> {:stop, :normal, state}
+      result -> {:reply, result, state}
     end
   end
 
   def handle_call(message, _from, state) do
-    log :warn, "unknown call: #{inspect message}"
+    log :warn, "Unknown call: #{inspect message}"
     {:reply, :not_implemented, state}
   end
 
@@ -168,7 +155,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec handle_cast(term, state) :: {:noreply, state} | {:stop, :normal, state}
   def handle_cast(message, state) do
-    log :warn, "unknown cast: #{inspect message}"
+    log :warn, "Unknown cast: #{inspect message}"
     {:noreply, state}
   end
 
@@ -177,10 +164,10 @@ defmodule ElixirAgi.Agi do
   """
   @spec handle_info(term, state) :: {:noreply, state}
   def handle_info(:read_variables, state) do
-    case read_variables state.info.reader do
+    case Proto.read_variables state.info.reader do
       :eof -> {:stop, :normal, state}
       vars ->
-        log :debug, "read variables: #{inspect vars}"
+        log :debug, "Read variables: #{inspect vars}"
         {:ok, _} = :erlang.apply(
           state.info.app_module, :start_link, [self, state.info.app_state]
         )
@@ -189,7 +176,7 @@ defmodule ElixirAgi.Agi do
   end
 
   def handle_info(message, state) do
-    log :warn, "unknown message: #{inspect message}"
+    log :warn, "Unknown message: #{inspect message}"
     {:noreply, state}
   end
 
@@ -206,35 +193,8 @@ defmodule ElixirAgi.Agi do
   """
   @spec terminate(term, state) :: :ok
   def terminate(reason, state) do
-    log :info, "terminating with: #{inspect reason}"
+    log :info, "Terminating with: #{inspect reason}"
     :ok = state.info.io_close.()
     :ok
-  end
-
-  defp read_variables(reader, vars \\ %{}) do
-    line = read reader
-    cond do
-      line === :eof -> :eof
-      String.length(line) < 2 -> vars
-      true ->
-        [k, v] = String.split line, ":", parts: 2
-        vars = Map.put vars, String.strip(k), String.strip(v)
-        read_variables reader, vars
-    end
-  end
-
-  defp write(writer, data) do
-    :ok = writer.([data, "\n"])
-    :ok
-  end
-
-  defp read(reader) do
-    line = reader.()
-    {line, _} = String.split_at line, -1
-    Logger.debug "AGI: read #{line}"
-    case line do
-      "HANGUP" <> _rest -> :eof
-      _ -> line
-    end
   end
 end
