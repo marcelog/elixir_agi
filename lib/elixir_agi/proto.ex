@@ -100,7 +100,7 @@ defmodule ElixirAgi.Agi.Proto do
 
   @spec run(reader, writer, String.t, [String.t]) :: Result.t | :eof
   def run(reader, writer, cmd, args) do
-    args = for a <- args, do: ["\"", a, "\" "]
+    args = for a <- args, do: ["\"", to_string(a), "\" "]
     cmd = ["\"", cmd, "\" "|args]
     :ok = write writer, cmd
     case read reader do
