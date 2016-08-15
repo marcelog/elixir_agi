@@ -83,6 +83,14 @@ defmodule ElixirAgi.Agi.Proto do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Application_Wait
+  """
+  @spec wait(reader, writer, non_neg_integer()) :: Result.t | :eof
+  def wait(reader, writer, seconds) do
+    exec reader, writer, "WAIT", [seconds]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(reader, writer, String.t, [String.t]) :: Result.t | :eof

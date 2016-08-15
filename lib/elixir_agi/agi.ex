@@ -106,6 +106,14 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Application_Wait
+  """
+  @spec wait(GenServer.server, non_neg_integer()) :: Result.t
+  def wait(server, seconds) do
+    run_generic server, :wait, [seconds]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(GenServer.server, String.t, [String.t], Integer.t) :: Result.t
