@@ -116,13 +116,21 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
-  @spec exec(GenServer.server, String.t, [String.t], Integer.t) :: Result.t
-  def exec(server, application, args \\ [], timeout \\ 5000) do
+  @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
+  def exec(server, application, args \\ []) do
     run_generic server, :exec, [application, args]
   end
 
-  defp run_generic(server, command, args \\ [], timeout \\ 5000) do
-    GenServer.call server, {:run_generic, command, args}, timeout
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_stream+file
+  """
+  @spec stream_file(GenServer.server, String.t, String.t) :: Result.t
+  def stream_file(server, file, escape_digits \\ "") do
+    run_generic server, :stream_file, [file, escape_digits]
+  end
+
+  defp run_generic(server, command, args \\ []) do
+    GenServer.call server, {:run_generic, command, args}, :infinity
   end
 
   @doc """

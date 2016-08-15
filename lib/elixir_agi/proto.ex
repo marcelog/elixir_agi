@@ -91,6 +91,14 @@ defmodule ElixirAgi.Agi.Proto do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_stream+file
+  """
+  @spec stream_file(reader, writer, String.t, String.t) :: Result.t | :eof
+  def stream_file(reader, writer, file, escape_digits \\ "") do
+    run reader, writer, "STREAM", ["FILE", file, escape_digits]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(reader, writer, String.t, [String.t]) :: Result.t | :eof
