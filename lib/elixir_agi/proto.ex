@@ -91,6 +91,48 @@ defmodule ElixirAgi.Agi.Proto do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Application_AMD
+  """
+  @spec amd(
+    reader,
+    writer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer
+  ) :: Result.t | :eof
+  def amd(
+    reader,
+    writer,
+    initial_silence,
+    greeting,
+    after_greeting_silence,
+    total_time,
+    min_word_length,
+    between_words_silence,
+    max_words,
+    silence_threshold,
+    max_word_length
+  ) do
+    exec reader, writer, "AMD", [
+      initial_silence,
+      greeting,
+      after_greeting_silence,
+      total_time,
+      min_word_length,
+      between_words_silence,
+      max_words,
+      silence_threshold,
+      max_word_length
+    ]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_stream+file
   """
   @spec stream_file(reader, writer, String.t, String.t) :: Result.t | :eof

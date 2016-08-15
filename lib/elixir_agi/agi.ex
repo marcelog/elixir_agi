@@ -114,6 +114,46 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/Application_AMD
+  """
+  @spec amd(
+    GenServer.server,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer
+  ) :: Result.t | :eof
+  def amd(
+    server,
+    initial_silence,
+    greeting,
+    after_greeting_silence,
+    total_time,
+    min_word_length,
+    between_words_silence,
+    max_words,
+    silence_threshold,
+    max_word_length
+  ) do
+    run_generic server, :amd, [
+      initial_silence,
+      greeting,
+      after_greeting_silence,
+      total_time,
+      min_word_length,
+      between_words_silence,
+      max_words,
+      silence_threshold,
+      max_word_length
+    ]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
