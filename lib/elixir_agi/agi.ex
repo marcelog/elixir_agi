@@ -16,6 +16,10 @@ defmodule ElixirAgi.Agi do
   See the License for the specific language governing permissions and
   limitations under the License.
   """
+  defmodule HangupError do
+    defexception message: "default message"
+  end
+
   require Logger
   alias ElixirAgi.Agi.Result
 
@@ -71,7 +75,7 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_answer
   """
-  @spec answer(t) :: Result.t | :eof
+  @spec answer(t) :: Result.t
   def answer(agi) do
     exec agi, "ANSWER"
   end
@@ -79,7 +83,7 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_hangup
   """
-  @spec hangup(t, String.t) :: Result.t | :eof
+  @spec hangup(t, String.t) :: Result.t
   def hangup(agi, channel \\ "") do
     exec agi, "HANGUP", [channel]
   end
@@ -87,7 +91,7 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_set+variable
   """
-  @spec set_variable(t, String.t, String.t) :: Result.t | :eof
+  @spec set_variable(t, String.t, String.t) :: Result.t
   def set_variable(agi, name, value) do
     run agi, "SET", ["VARIABLE", "#{name}", "#{value}"]
   end
@@ -95,23 +99,21 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_get+full+variable
   """
-  @spec get_full_variable(t, String.t) :: Result.t | :eof
+  @spec get_full_variable(t, String.t) :: Result.t
   def get_full_variable(agi, name) do
-    case run agi, "GET", ["FULL", "VARIABLE", "${#{name}}"] do
-      :eof -> :eof
-      result -> if result.result === "1" do
-        [_, var] = Regex.run ~r/\(([^\)]*)\)/, hd(result.extra)
-        %Result{result | extra: var}
-      else
-        %Result{result | extra: nil}
-      end
+    result = run agi, "GET", ["FULL", "VARIABLE", "${#{name}}"]
+     if result.result === "1" do
+      [_, var] = Regex.run ~r/\(([^\)]*)\)/, hd(result.extra)
+      %Result{result | extra: var}
+    else
+      %Result{result | extra: nil}
     end
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Application_Dial
   """
-  @spec dial(t, String.t, non_neg_integer(), [String.t]) :: Result.t | :eof
+  @spec dial(t, String.t, non_neg_integer(), [String.t]) :: Result.t
   def dial(agi, dial_string, timeout_seconds, options) do
     exec agi, "DIAL", [
       dial_string,
@@ -123,7 +125,7 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Application_Wait
   """
-  @spec wait(t, non_neg_integer()) :: Result.t | :eof
+  @spec wait(t, non_neg_integer()) :: Result.t
   def wait(agi, seconds) do
     exec agi, "WAIT", [seconds]
   end
@@ -142,7 +144,7 @@ defmodule ElixirAgi.Agi do
     non_neg_integer,
     non_neg_integer,
     non_neg_integer
-  ) :: Result.t | :eof
+  ) :: Result.t
   def amd(
     agi,
     initial_silence,
@@ -171,7 +173,7 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_stream+file
   """
-  @spec stream_file(t, String.t, String.t) :: Result.t | :eof
+  @spec stream_file(t, String.t, String.t) :: Result.t
   def stream_file(agi, file, escape_digits \\ "") do
     run agi, "STREAM", ["FILE", file, escape_digits]
   end
@@ -179,28 +181,24 @@ defmodule ElixirAgi.Agi do
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
-  @spec exec(t, String.t, [String.t]) :: Result.t | :eof
+  @spec exec(t, String.t, [String.t]) :: Result.t
   def exec(agi, application, args \\ []) do
     run agi, "EXEC", [application|args]
   end
 
-  @spec run(t, String.t, [String.t]) :: Result.t | :eof
+  @spec run(t, String.t, [String.t]) :: Result.t
   def run(agi, cmd, args) do
     args = for a <- args, do: ["\"", to_string(a), "\" "]
     cmd = ["\"", cmd, "\" "|args]
     :ok = write agi, cmd
-    case read agi do
-      :eof -> :eof
-      line -> Result.new line
-    end
+    Result.new read(agi)
   end
 
-  @spec read_variables(t, Map.t) :: Map.t | :eof
+  @spec read_variables(t, Map.t) :: Map.t
   def read_variables(agi, vars \\ %{}) do
     log :debug, "Reading next variable"
     line = read agi
     cond do
-      line === :eof -> :eof
       String.length(line) < 2 -> vars
       true ->
         [k, v] = String.split line, ":", parts: 2
@@ -222,7 +220,7 @@ defmodule ElixirAgi.Agi do
     case line do
       "HANGUP" <> _rest ->
         agi.close.()
-        :eof
+        raise HangupError, "hangup"
       _ -> line
     end
   end
