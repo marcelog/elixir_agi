@@ -1,6 +1,7 @@
 defmodule ElixirAgi.Agi do
   @moduledoc """
-  This module represents an AGI application
+  This module handles the AGI implementation by reading and writing to/from
+  the source.
 
   Copyright 2015 Marcelo Gornstein <marcelog@gmail.com>
 
@@ -17,107 +18,108 @@ defmodule ElixirAgi.Agi do
   """
   require Logger
   alias ElixirAgi.Agi.Result
-  alias ElixirAgi.Agi.Proto
-  use GenServer
 
   defstruct \
-    app_module: nil,
-    app_state: nil,
     reader: nil,
-    io_init: nil,
-    io_close: nil,
     writer: nil,
     variables: %{}
 
   @type t :: ElixirAgi.Agi
   @typep state :: Map.t
+  @type reader :: function
+  @type writer :: function
 
   defmacro log(level, message) do
     quote do
-      state = var! state
       Logger.unquote(level)("ElixirAgi AGI: #{unquote(message)}")
     end
   end
 
   @doc """
-  Starts and link an AGI application.
+  Returns an AGI struct that uses STDIN and STDOUT.
   """
-  @spec start_link(t) :: GenServer.on_start
-  def start_link(info) do
-    GenServer.start_link __MODULE__, info
+  @spec new() :: t
+  def new() do
+    new fn() -> IO.gets "" end, fn(data) -> IO.puts data en
   end
 
   @doc """
-  Starts an AGI application.
+  Returns an AGI struct.
   """
-  @spec start(t) :: GenServer.on_start
-  def start(info) do
-    GenServer.start __MODULE__, info
-  end
-
-  @doc """
-  Closes an AGI socket.
-  """
-  @spec close(GenServer.server) :: :ok
-  def close(server) do
-    GenServer.call server, :close
+  @spec new(reader, writer) :: t
+  def new(reader, writer) do
+    %{
+      reader: reader,
+      writer: writer,
+      variable: read_variables(reader)
+    }
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_answer
   """
-  @spec answer(GenServer.server) :: Result.t
-  def answer(server) do
-    run_generic server, :answer
+  @spec answer(t) :: Result.t | :eof
+  def answer(agi) do
+    exec ragi, "ANSWER"
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_hangup
   """
-  @spec hangup(GenServer.server, String.t) :: Result.t
-  def hangup(server, channel \\ "") do
-    run_generic server, :hangup, [channel]
+  @spec hangup(t, String.t) :: Result.t | :eof
+  def hangup(agi, channel \\ "") do
+    exec agi, "HANGUP", [channel]
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_set+variable
   """
-  @spec set_variable(GenServer.server, String.t, String.t) :: Result.t
-  def set_variable(server, name, value) do
-    run_generic server, :set_variable, [name, value]
+  @spec set_variable(t, String.t, String.t) :: Result.t | :eof
+  def set_variable(agi, name, value) do
+    run agi, "SET", ["VARIABLE", "#{name}", "#{value}"]
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_get+full+variable
   """
-  @spec get_full_variable(GenServer.server, String.t) :: Result.t
-  def get_full_variable(server, name) do
-    run_generic server, :get_full_variable, [name]
+  @spec get_full_variable(t, String.t) :: Result.t | :eof
+  def get_full_variable(agi, name) do
+    case run agi, "GET", ["FULL", "VARIABLE", "${#{name}}"] do
+      :eof -> :eof
+      result -> if result.result === "1" do
+        [_, var] = Regex.run ~r/\(([^\)]*)\)/, hd(result.extra)
+        %Result{result | extra: var}
+      else
+        %Result{result | extra: nil}
+      end
+    end
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Application_Dial
   """
-  @spec dial(
-    GenServer.server, String.t, non_neg_integer(), [String.t]
-  ) :: Result.t
-  def dial(server, dial_string, timeout_seconds, options) do
-    run_generic server, :dial, [dial_string, timeout_seconds, options]
+  @spec dial(t, String.t, non_neg_integer(), [String.t]) :: Result.t | :eof
+  def dial(agi, dial_string, timeout_seconds, options) do
+    exec agi, "DIAL", [
+      dial_string,
+      to_string(timeout_seconds),
+      Enum.join(options, ",")
+    ]
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Application_Wait
   """
-  @spec wait(GenServer.server, non_neg_integer()) :: Result.t
-  def wait(server, seconds) do
-    run_generic server, :wait, [seconds]
+  @spec wait(t, non_neg_integer()) :: Result.t | :eof
+  def wait(agi, seconds) do
+    exec agi, "WAIT", [seconds]
   end
 
   @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Application_AMD
   """
   @spec amd(
-    GenServer.server,
+    t,
     non_neg_integer,
     non_neg_integer,
     non_neg_integer,
@@ -129,7 +131,7 @@ defmodule ElixirAgi.Agi do
     non_neg_integer
   ) :: Result.t | :eof
   def amd(
-    server,
+    agi,
     initial_silence,
     greeting,
     after_greeting_silence,
@@ -140,7 +142,7 @@ defmodule ElixirAgi.Agi do
     silence_threshold,
     max_word_length
   ) do
-    run_generic server, :amd, [
+    exec agi, "AMD", [
       initial_silence,
       greeting,
       after_greeting_silence,
@@ -154,108 +156,59 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
-  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
-  """
-  @spec exec(GenServer.server, String.t, [String.t]) :: Result.t
-  def exec(server, application, args \\ []) do
-    run_generic server, :exec, [application, args]
-  end
-
-  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+AGICommand_stream+file
   """
-  @spec stream_file(GenServer.server, String.t, String.t) :: Result.t
-  def stream_file(server, file, escape_digits \\ "") do
-    run_generic server, :stream_file, [file, escape_digits]
-  end
-
-  defp run_generic(server, command, args \\ []) do
-    GenServer.call server, {:run_generic, command, args}, :infinity
+  @spec stream_file(t, String.t, String.t) :: Result.t | :eof
+  def stream_file(agi, file, escape_digits \\ "") do
+    run agi, "STREAM", ["FILE", file, escape_digits]
   end
 
   @doc """
-  GenServer callback
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
-  @spec init(t) :: {:ok, state}
-  def init(info) do
-    send self, :read_variables
-    :ok = info.io_init.()
-    {:ok, %{info: info}}
+  @spec exec(t, String.t, [String.t]) :: Result.t | :eof
+  def exec(agi, application, args \\ []) do
+    run agi, "EXEC", [application|args]
   end
 
-  @doc """
-  GenServer callback
-  """
-  @spec handle_call(term, term, state) ::
-    {:noreply, state} | {:reply, term, state}
-  def handle_call(:close, _from, state) do
-    {:stop, :normal, :ok, state}
-  end
-
-  def handle_call({:run_generic, command, args}, _from, state) do
-    case :erlang.apply(
-      Proto, command, [state.info.reader, state.info.writer] ++ args
-    ) do
-      :eof -> {:stop, :normal, state}
-      result -> {:reply, result, state}
+  @spec run(t, String.t, [String.t]) :: Result.t | :eof
+  def run(agi, cmd, args) do
+    args = for a <- args, do: ["\"", to_string(a), "\" "]
+    cmd = ["\"", cmd, "\" "|args]
+    :ok = write agi, cmd
+    case read agi do
+      :eof -> :eof
+      line -> Result.new line
     end
   end
 
-  def handle_call(message, _from, state) do
-    log :warn, "Unknown call: #{inspect message}"
-    {:reply, :not_implemented, state}
-  end
-
-  @doc """
-  GenServer callback
-  """
-  @spec handle_cast(term, state) :: {:noreply, state} | {:stop, :normal, state}
-  def handle_cast(message, state) do
-    log :warn, "Unknown cast: #{inspect message}"
-    {:noreply, state}
-  end
-
-  @doc """
-  GenServer callback
-  """
-  @spec handle_info(term, state) :: {:noreply, state}
-  def handle_info({:"ETS-TRANSFER", _ets, _pid, {:asyncagi_table}}, state) do
-    # Used by ElixirAmi.Connection.async_agi
-    {:noreply, state}
-  end
-
-  def handle_info(:read_variables, state) do
-    case Proto.read_variables state.info.reader do
-      :eof -> {:stop, :normal, state}
-      vars ->
-        log :debug, "Read variables: #{inspect vars}"
-        {:ok, _} = :erlang.apply(
-          state.info.app_module, :start_link, [self, state.info.app_state]
-        )
-        {:noreply, state}
+  @spec read_variables(t, Map.t) :: Map.t | :eof
+  def read_variables(agi, vars \\ %{}) do
+    log :debug, "Reading next variable"
+    line = read agi.reader
+    cond do
+      line === :eof -> :eof
+      String.length(line) < 2 -> vars
+      true ->
+        [k, v] = String.split line, ":", parts: 2
+        vars = Map.put vars, String.strip(k), String.strip(v)
+        read_variables agi, vars
     end
   end
 
-  def handle_info(message, state) do
-    log :warn, "Unknown message: #{inspect message}"
-    {:noreply, state}
-  end
-
-  @doc """
-  GenServer callback
-  """
-  @spec code_change(term, state, term) :: {:ok, state}
-  def code_change(_old_vsn, state, _extra) do
-    {:ok, state}
-  end
-
-  @doc """
-  GenServer callback
-  """
-  @spec terminate(term, state) :: :ok
-  def terminate(reason, state) do
-    log :info, "Terminating with: #{inspect reason}"
-    :ok = state.info.io_close.()
+  defp write(agi, data) do
+    log :debug, "Writing #{data}"
+    :ok = agi.writer.([data, "\n"])
     :ok
+  end
+
+  defp read(agi) do
+    line = agi.reader.()
+    {line, _} = String.split_at line, -1
+    log :debug, "Read #{line}"
+    case line do
+      "HANGUP" <> _rest -> :eof
+      _ -> line
+    end
   end
 end
