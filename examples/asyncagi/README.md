@@ -14,8 +14,8 @@ you can start a listener like:
 ```elixir
   ElixirAmi.Connection.async_agi(
     :my_connection,
-    MyAppModule,
-    :my_function
+    AsyncAgiApp,
+    :run
   )
 ```
 
@@ -23,7 +23,7 @@ This will start listening for [AsyncAGIStart](https://wiki.asterisk.org/wiki/dis
 on the given connection and launch the AGI App with a spawned process:
 
 ```elixir
-MyAppModule:my_function(agi)
+AsyncAgiApp.run(agi)
 ```
 
 Where `agi` is an [agi struct](https://github.com/marcelog/elixir_agi/blob/master/lib/elixir_agi/agi.ex).
