@@ -33,7 +33,7 @@ Find the user guide in the github repo at: https://github.com/marcelog/elixir_ag
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*", "examples"],
       maintainers: ["Marcelo Gornstein"],
       licenses: ["Apache 2.0"],
       links: %{
