@@ -4,6 +4,6 @@ Setup a dialplan like:
 
 ```
 [my_context]
-exten => _X.,1,AGI(/path/to/elixir,/path/to/app.exs)
+exten => _X.,1,AGI(/path/to/elixir,-pa,/path/to/your/ebins,/path/to/app.exs)
 same => n, Hangup
 ```
