@@ -123,11 +123,8 @@ defmodule ElixirAgi.FastAgi do
         ip = :inet.ntoa address
         log :debug, "accepted new connection from: #{ip}:#{port}"
 
-        io_init = fn() ->
-          :inet.setopts socket, [{:active, false}, {:packet, :line}, :binary]
-          :gen_tcp.controlling_process socket, self
-          :ok
-        end
+        :inet.setopts socket, [{:active, false}, {:packet, :line}, :binary]
+        :gen_tcp.controlling_process socket, self
 
         reader = fn() ->
           {:ok, read_data} = :gen_tcp.recv socket, 0
@@ -138,13 +135,9 @@ defmodule ElixirAgi.FastAgi do
           :ok = :gen_tcp.send socket, write_data
         end
 
-        io_close = fn() ->
-          :ok = :gen_tcp.close socket
-        end
-
         {:ok, _} = Sup.new(
           state.info.app_module, state.info.app_state,
-          io_init, reader, writer, io_close
+          reader, writer
         )
         state
       {:error, :timeout} ->
@@ -176,6 +169,7 @@ defmodule ElixirAgi.FastAgi do
   @spec terminate(term, state) :: :ok
   def terminate(reason, state) do
     log :info, "terminating with: #{inspect reason}"
+    :gen_tcp.close state.socket
     :ok
   end
 end
