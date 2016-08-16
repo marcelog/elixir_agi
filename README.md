@@ -14,7 +14,7 @@ To use it in your Mix projects, first add it as a dependency:
 
 ```elixir
 def deps do
-  [{:elixir_agi, "~> 0.0.3"}]
+  [{:elixir_agi, "~> 0.0.10"}]
 end
 ```
 Then run mix deps.get to install it.
