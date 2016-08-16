@@ -16,7 +16,7 @@ defmodule ElixirAgi.FastAgi do
   See the License for the specific language governing permissions and
   limitations under the License.
   """
-  alias ElixirAgi.Supervisor.Agi, as: Sup
+  alias ElixirAgi.Agi
   use GenServer
   require Logger
   defstruct \
@@ -25,7 +25,7 @@ defmodule ElixirAgi.FastAgi do
     port: nil,
     backlog: 5,
     app_module: nil,
-    app_state: nil
+    app_function: nil
 
   @type t :: ElixirAgi.FastAgi
   @typep state :: Map.t
@@ -123,12 +123,15 @@ defmodule ElixirAgi.FastAgi do
         ip = :inet.ntoa address
         log :debug, "accepted new connection from: #{ip}:#{port}"
 
-        io_init = fn() ->
-          :inet.setopts socket, [{:active, false}, {:packet, :line}, :binary]
-          :gen_tcp.controlling_process socket, self
+        :ok = :inet.setopts socket, [{:active, false}, {:packet, :line}, :binary]
+        :ok = :gen_tcp.controlling_process socket, self
+        init = fn() ->
           :ok
         end
-
+        close = fn() ->
+          :gen_tcp.close socket
+          :ok
+        end
         reader = fn() ->
           {:ok, read_data} = :gen_tcp.recv socket, 0
           read_data
@@ -137,15 +140,11 @@ defmodule ElixirAgi.FastAgi do
         writer = fn(write_data) ->
           :ok = :gen_tcp.send socket, write_data
         end
-
-        io_close = fn() ->
-          :ok = :gen_tcp.close socket
-        end
-
-        {:ok, _} = Sup.new(
-          state.info.app_module, state.info.app_state,
-          io_init, reader, writer, io_close
-        )
+        agi = Agi.new init, close, reader, writer
+        spawn(fn() ->
+          :erlang.apply state.info.app_module, state.info.app_function, [agi]
+        end)
+        send self, :accept
         state
       {:error, :timeout} ->
         send self, :accept
@@ -176,6 +175,7 @@ defmodule ElixirAgi.FastAgi do
   @spec terminate(term, state) :: :ok
   def terminate(reason, state) do
     log :info, "terminating with: #{inspect reason}"
+    :gen_tcp.close state.socket
     :ok
   end
 end

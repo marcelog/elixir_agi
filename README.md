@@ -14,7 +14,7 @@ To use it in your Mix projects, first add it as a dependency:
 
 ```elixir
 def deps do
-  [{:elixir_agi, "~> 0.0.3"}]
+  [{:elixir_agi, "~> 0.0.10"}]
 end
 ```
 Then run mix deps.get to install it.
@@ -29,56 +29,8 @@ Also add the app in your mix.exs file:
 
 ----
 
-# FastAGI
-
-elixir_erlagi provides a FastAGI server, so you can run your AGI applications
-through TCP in a different host, providing scalability. To use it, you have to
-setup in your dialplan something like this:
-
-```
-[dialer]
-exten => _X.,1,Answer
-exten => _X.,n,AGI(agi://192.168.1.22:4444)
-```
-
-And then in your elixir node, you can start the listener like this:
-
-```elixir
-  ElixirAgi.Supervisor.FastAgi.new MyAppModule, %{initial_state: []}, :my_server_name, "0.0.0.0", 4444, 10
-```
-
-`MyAppModule` must have a `start_link` function, and must return `{:ok, pid}` so
-it will be linked to the AGI process that is handling the connection.
-
-----
-
-# Sample AGI Application
-
-```elixir
-defmodule MyAppModule do
-  use GenServer
-  alias ElixirAgi.Agi, as: Agi
-  require Logger
-
-  def start_link(agi, initial_state) do
-    GenServer.start_link __MODULE__, [agi, initial_state]
-  end
-
-  def init([agi, state]) do
-    {:ok, %{agi: agi, state: state}, 0}
-  end
-
-  def handle_info(:timeout, state) do
-    Logger.debug "Starting APP"
-    Logger.debug "AA: #{inspect Agi.answer(state.agi)}"
-    :timer.sleep 1000
-    Logger.debug "AA: #{inspect Agi.hangup(state.agi)}"
-    Agi.close state.agi
-    {:noreply, state}
-  end
-
-end
-```
+# Examples
+See the [examples directory](https://github.com/marcelog/elixir_agi/tree/master/examples)
 
 ----
 

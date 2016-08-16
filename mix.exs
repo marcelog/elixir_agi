@@ -9,7 +9,7 @@ defmodule ElixirAgi.Mixfile do
       package: package,
       source_url: "https://github.com/marcelog/elixir_ami",
       app: :elixir_agi,
-      version: "0.0.9",
+      version: "0.0.10",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       deps: deps
@@ -33,7 +33,7 @@ Find the user guide in the github repo at: https://github.com/marcelog/elixir_ag
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*", "examples"],
       maintainers: ["Marcelo Gornstein"],
       licenses: ["Apache 2.0"],
       links: %{

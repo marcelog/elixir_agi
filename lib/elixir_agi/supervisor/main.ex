@@ -33,10 +33,6 @@ defmodule ElixirAgi.Supervisor.Main do
   def init([]) do
     Logger.debug "ElixirAgi: Starting main supervisor"
     children = [
-      supervisor(ElixirAgi.Supervisor.Agi, [], [
-        restart: :permanent,
-        shutdown: :infinity
-      ]),
       supervisor(ElixirAgi.Supervisor.FastAgi, [], [
         restart: :permanent,
         shutdown: :infinity
