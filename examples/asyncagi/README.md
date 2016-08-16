@@ -8,7 +8,7 @@ exten => _X.,n,AGI(agi:asyncagi)
 same => n, Hangup
 ```
 
-And then in your elixir node, if you use [elixir_ami](https://github.com/marcelog/elixir_ami],
+And then in your elixir node, if you use [elixir_ami](https://github.com/marcelog/elixir_ami),
 you can start a listener like:
 
 ```elixir
