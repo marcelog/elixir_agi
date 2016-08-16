@@ -25,7 +25,6 @@ defmodule ElixirAgi.Agi do
     variables: %{}
 
   @type t :: ElixirAgi.Agi
-  @typep state :: Map.t
   @type reader :: function
   @type writer :: function
 
@@ -40,7 +39,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec new() :: t
   def new() do
-    new fn() -> IO.gets "" end, fn(data) -> IO.puts data en
+    new fn() -> IO.gets "" end, fn(data) -> IO.write data end
   end
 
   @doc """
@@ -48,11 +47,13 @@ defmodule ElixirAgi.Agi do
   """
   @spec new(reader, writer) :: t
   def new(reader, writer) do
-    %{
+    agi = %ElixirAgi.Agi{
       reader: reader,
       writer: writer,
-      variable: read_variables(reader)
+      variables: %{}
     }
+    variables = read_variables agi
+    %ElixirAgi.Agi{agi | variables: variables}
   end
 
   @doc """
@@ -60,7 +61,7 @@ defmodule ElixirAgi.Agi do
   """
   @spec answer(t) :: Result.t | :eof
   def answer(agi) do
-    exec ragi, "ANSWER"
+    exec agi, "ANSWER"
   end
 
   @doc """
@@ -185,7 +186,7 @@ defmodule ElixirAgi.Agi do
   @spec read_variables(t, Map.t) :: Map.t | :eof
   def read_variables(agi, vars \\ %{}) do
     log :debug, "Reading next variable"
-    line = read agi.reader
+    line = read agi
     cond do
       line === :eof -> :eof
       String.length(line) < 2 -> vars
