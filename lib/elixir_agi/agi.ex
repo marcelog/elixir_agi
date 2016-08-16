@@ -219,6 +219,11 @@ defmodule ElixirAgi.Agi do
   GenServer callback
   """
   @spec handle_info(term, state) :: {:noreply, state}
+  def handle_info({:"ETS-TRANSFER", _ets, _pid, {:asyncagi_table}}, state) do
+    # Used by ElixirAmi.Connection.async_agi
+    {:noreply, state}
+  end
+
   def handle_info(:read_variables, state) do
     case Proto.read_variables state.info.reader do
       :eof -> {:stop, :normal, state}
