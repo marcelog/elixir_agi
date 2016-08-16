@@ -5,7 +5,5 @@ defmodule AsyncAgiApp do
     Agi.answer agi
     Agi.wait agi, 10
     Agi.hangup agi
-    # When you're done, close the TCP communication to Asterisk.
-    agi.close.()
   end
 end
