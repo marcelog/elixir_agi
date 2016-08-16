@@ -20,6 +20,8 @@ defmodule ElixirAgi.Agi do
   alias ElixirAgi.Agi.Result
 
   defstruct \
+    init: nil,
+    close: nil,
     reader: nil,
     writer: nil,
     variables: %{}
@@ -27,6 +29,8 @@ defmodule ElixirAgi.Agi do
   @type t :: ElixirAgi.Agi
   @type reader :: function
   @type writer :: function
+  @type init :: function
+  @type close :: function
 
   defmacro log(level, message) do
     quote do
@@ -39,15 +43,23 @@ defmodule ElixirAgi.Agi do
   """
   @spec new() :: t
   def new() do
-    new fn() -> IO.gets "" end, fn(data) -> IO.write data end
+    new(
+      fn() -> :ok end,
+      fn() -> :ok end,
+      fn() -> IO.gets "" end,
+      fn(data) -> IO.write data end
+    )
   end
 
   @doc """
   Returns an AGI struct.
   """
-  @spec new(reader, writer) :: t
-  def new(reader, writer) do
+  @spec new(init, close, reader, writer) :: t
+  def new(init, close, reader, writer) do
+    :ok = init.()
     agi = %ElixirAgi.Agi{
+      init: init,
+      close: close,
       reader: reader,
       writer: writer,
       variables: %{}
@@ -208,7 +220,9 @@ defmodule ElixirAgi.Agi do
     {line, _} = String.split_at line, -1
     log :debug, "Read #{line}"
     case line do
-      "HANGUP" <> _rest -> :eof
+      "HANGUP" <> _rest ->
+        agi.close.()
+        :eof
       _ -> line
     end
   end

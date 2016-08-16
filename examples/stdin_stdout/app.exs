@@ -1,8 +1,7 @@
-defmodule StdinStdoutAgi do
-  alias ElixirAgi.Agi
+alias ElixirAgi.Agi
 
-  def run() do
-    agi = Agi.new
+defmodule StdinStdoutAgi do
+  def run(agi) do
     Agi.answer agi
     Agi.wait agi, 10
     Agi.hangup agi
@@ -12,5 +11,5 @@ end
 # Don't log to console
 Logger.remove_backend :console
 Application.ensure_all_started :elixir_agi
-StdinStdoutAgi.run
+StdinStdoutAgi.run ElixirAgi.Agi.new
 System.halt 0
