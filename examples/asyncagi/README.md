@@ -15,7 +15,8 @@ you can start a listener like:
   ElixirAmi.Connection.async_agi(
     :my_connection,
     AsyncAgiApp,
-    :run
+    :run,
+    true,                # debug = true/false
   )
 ```
 

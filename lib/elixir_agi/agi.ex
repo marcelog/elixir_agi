@@ -28,6 +28,7 @@ defmodule ElixirAgi.Agi do
     close: nil,
     reader: nil,
     writer: nil,
+    debug: false,
     variables: %{}
 
   @type t :: ElixirAgi.Agi
@@ -37,36 +38,45 @@ defmodule ElixirAgi.Agi do
   @type close :: function
 
   defmacro log(level, message) do
-    quote do
-      Logger.unquote(level)("ElixirAgi AGI: #{unquote(message)}")
+    quote bind_quoted: [
+      level: level,
+      message: message
+    ] do
+      agi = var! agi
+      level_str = to_string level
+      if((level_str !== "debug") or agi.debug) do
+        Logger.bare_log level, "ElixirAgi AGI: #{message}"
+      end
     end
   end
 
   @doc """
   Returns an AGI struct that uses STDIN and STDOUT.
   """
-  @spec new() :: t
-  def new() do
+  @spec new(boolean) :: t
+  def new(debug \\ false) do
     new(
       fn() -> :ok end,
       fn() -> :ok end,
       fn() -> IO.gets "" end,
-      fn(data) -> IO.write data end
+      fn(data) -> IO.write data end,
+      debug
     )
   end
 
   @doc """
   Returns an AGI struct.
   """
-  @spec new(init, close, reader, writer) :: t
-  def new(init, close, reader, writer) do
+  @spec new(init, close, reader, writer, boolean) :: t
+  def new(init, close, reader, writer, debug) do
     :ok = init.()
     agi = %ElixirAgi.Agi{
       init: init,
       close: close,
       reader: reader,
       writer: writer,
-      variables: %{}
+      variables: %{},
+      debug: debug
     }
     variables = read_variables agi
     %ElixirAgi.Agi{agi | variables: variables}

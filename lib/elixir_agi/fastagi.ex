@@ -24,6 +24,7 @@ defmodule ElixirAgi.FastAgi do
     host: nil,
     port: nil,
     backlog: 5,
+    debug: false,
     app_module: nil,
     app_function: nil
 
@@ -140,7 +141,7 @@ defmodule ElixirAgi.FastAgi do
         writer = fn(write_data) ->
           :ok = :gen_tcp.send socket, write_data
         end
-        agi = Agi.new init, close, reader, writer
+        agi = Agi.new init, close, reader, writer, state.info.debug
         spawn(fn() ->
           :erlang.apply state.info.app_module, state.info.app_function, [agi]
         end)

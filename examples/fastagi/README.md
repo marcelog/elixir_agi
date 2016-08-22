@@ -16,6 +16,7 @@ And then in your elixir node, you can start the listener like this:
   ElixirAgi.Supervisor.FastAgi.new(
     FastAgiApp,
     :run,
+    true,                # debug = true/false
     :my_server_name,
     "0.0.0.0",
     4444,
