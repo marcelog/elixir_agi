@@ -189,11 +189,72 @@ defmodule ElixirAgi.Agi do
   end
 
   @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_control+stream+file
+  """
+  @spec control_stream_file(t, String.t, String.t, Integer.t, String.t, String.t, String.t) :: Result.t
+  def control_stream_file(agi, file, escape_digits \\ "", offset \\ 0, forward_digits \\ "", rewind_digits \\ "", pause_digits \\ "") do
+    run agi, "CONTROL STREAM", ["FILE", file, escape_digits, offset, forward_digits, rewind_digits, pause_digits]
+  end
+
+  @doc """
   See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_exec
   """
   @spec exec(t, String.t, [String.t]) :: Result.t
   def exec(agi, application, args \\ []) do
     run agi, "EXEC", [application|args]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_get+data
+  """
+  @spec get_data(t, String.t, Integer.t, Integer.t) :: Result.t
+  def get_data(agi, file, timeout \\ 0, max_digits \\ 0) do
+    run agi, "GET DATA", [file, timeout, max_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_get+option
+  """
+  @spec get_option(t, String.t, String.t, Integer.t) :: Result.t
+  def get_option(agi, file, escape_digits \\ "", timeout \\ 0) do
+    run agi, "GET OPTION", [file, escape_digits, timeout]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_record+file
+  """
+  @spec record_file(t, String.t, String.t, String.t, Integer.t, Integer.t, boolean, Integer.t) :: Result.t
+  def record_file(
+   agi,
+   file,
+   format \\ "wav",
+   escape_digits \\ "",
+   timeout \\ 0,
+   offset \\ 0,
+   beep = false,
+   silence \\ 0
+   ) do
+    args = [file, format, escape_digits, timeout, offset, beep]
+    cond do
+      silence > 0 -> run agi, "RECORD FILE", args
+      true -> run agi, "RECORD FILE", [args | "s=" <> silence]
+    end
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_wait+for+digit
+  """
+  @spec wait_for_digit(t, Integer.t) :: Result.t
+  def wait_for_digit(agi, timeout \\ 0) do
+    run agi, "WAIT FOR DIGIT", [timeout]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_channel+status
+  """
+  @spec channel_status(t, String.t) :: Result.t
+  def channel_status(agi, channel) do
+    run agi, "CHANNEL STATUS", [channel]
   end
 
   @spec run(t, String.t, [String.t]) :: Result.t
