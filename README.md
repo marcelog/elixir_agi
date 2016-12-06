@@ -38,7 +38,7 @@ See the [examples directory](https://github.com/marcelog/elixir_agi/tree/master/
 
 You can find the available AGI commands in the [AGI](https://github.com/marcelog/elixir_agi/blob/master/lib/elixir_agi/agi.ex) module.
 Feel free to open a pull request to include new ones :) If you want to use a command that is not supported yet, you can
-use the `exec/3` function of the AGI module.
+use the `run/3` function of the AGI module.
 
 ----
 
