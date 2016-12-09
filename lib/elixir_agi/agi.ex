@@ -257,6 +257,102 @@ defmodule ElixirAgi.Agi do
     run agi, "CHANNEL STATUS", [channel]
   end
 
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+alpha
+  """
+  @spec say_alpha(t, Integer.t, String.t) :: Result.t
+  def say_alpha(agi, number, escape_digits \\ "") do
+    run agi, "SAY ALPHA", [number, escape_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+date
+  """
+  @spec say_date(t, Integer.t, String.t) :: Result.t
+  def say_date(agi, elapsed_seconds, escape_digits \\ "") do
+    run agi, "SAY DATE", [elapsed_seconds, escape_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+datetime
+  TODO: This function needs testing!
+  """
+  @spec say_datetime(t, Integer.t, String.t) :: Result.t
+  def say_datetime(agi, elapsed_seconds, escape_digits \\ "", format \\ "", timezone \\ "") do
+    run agi, "SAY DATETIME", [elapsed_seconds, escape_digits, format, timezone]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+digits
+  """
+  @spec say_digits(t, Integer.t, String.t) :: Result.t
+  def say_digits(agi, number, escape_digits \\ "") do
+    run agi, "SAY DIGITS", [number, escape_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+number
+  """
+  @spec say_number(t, Integer.t, String.t, String.t) :: Result.t
+  def say_number(agi, number, escape_digits \\ "", gender \\ "c") do
+    run agi, "SAY NUMBER", [number, escape_digits, gender]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+phonetic
+  """
+  @spec say_phonetic(t, String.t, String.t) :: Result.t
+  def say_phonetic(agi, string, escape_digits \\ "") do
+    run agi, "SAY PHONETIC", [string, escape_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_say+time
+  """
+  @spec say_time(t, Integer.t, String.t) :: Result.t
+  def say_time(agi, time, escape_digits \\ "") do
+    run agi, "SAY TIME", [time, escape_digits]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_set+autohangup
+  """
+  @spec set_autohangup(t, Integer.t) :: Result.t
+  def set_autohangup(agi, timespan) do
+    run agi, "SET AUTOHANGUP", [timespan]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_set+callerid
+  """
+  @spec set_callerid(t, String.t) :: Result.t
+  def set_callerid(agi, callerid) do
+    run agi, "SET CALLERID", [callerid]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_set+context
+  """
+  @spec set_context(t, String.t) :: Result.t
+  def set_context(agi, context) do
+    run agi, "SET CONTEXT", [context]
+  end
+
+  @doc """
+  See: https://wiki.asterisk.org/wiki/display/AST/AGICommand_set+extension
+  """
+  @spec set_extension(t, String.t) :: Result.t
+  def set_extension(agi, extension) do
+    run agi, "SET EXTENSION", [extension]
+  end
+
+  @doc """
+  Runs an agi command on a channel
+  ## Parameters
+    - agi: the agi channel to send command to
+    - cmd: Asterisk command name
+    - args: List of asterisk command parameters in order of asterisk command docs
+  """
   @spec run(t, String.t, [String.t]) :: Result.t
   def run(agi, cmd, args) do
     args = for a <- args, do: ["\"", to_string(a), "\" "]
