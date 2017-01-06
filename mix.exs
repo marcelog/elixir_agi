@@ -7,7 +7,7 @@ defmodule ElixirAgi.Mixfile do
       elixir: "~> 1.0",
       description: description,
       package: package,
-      source_url: "https://github.com/marcelog/elixir_ami",
+      source_url: "https://github.com/marcelog/elixir_agi",
       app: :elixir_agi,
       version: "0.0.13",
       build_embedded: Mix.env == :prod,
