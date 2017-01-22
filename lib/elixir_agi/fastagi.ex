@@ -81,7 +81,7 @@ defmodule ElixirAgi.FastAgi do
           {:reuseaddr, true}, {:backlog, info.backlog}
         ]) do
           {:ok, socket} ->
-            send self, :accept
+            send self(), :accept
             {:ok, %{state | socket: socket}}
           {:error, e} -> {:stop, e}
         end
@@ -125,7 +125,7 @@ defmodule ElixirAgi.FastAgi do
         log :debug, "accepted new connection from: #{ip}:#{port}"
 
         :ok = :inet.setopts socket, [{:active, false}, {:packet, :line}, :binary]
-        :ok = :gen_tcp.controlling_process socket, self
+        :ok = :gen_tcp.controlling_process socket, self()
         init = fn() ->
           :ok
         end
@@ -145,10 +145,10 @@ defmodule ElixirAgi.FastAgi do
         spawn(fn() ->
           :erlang.apply state.info.app_module, state.info.app_function, [agi]
         end)
-        send self, :accept
+        send self(), :accept
         state
       {:error, :timeout} ->
-        send self, :accept
+        send self(), :accept
         state
       {:error, e} ->
         log :error, "could not accept socket: #{inspect e}"

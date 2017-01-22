@@ -5,14 +5,14 @@ defmodule ElixirAgi.Mixfile do
     [
       name: "elixir_agi",
       elixir: "~> 1.0",
-      description: description,
-      package: package,
+      description: description(),
+      package: package(),
       source_url: "https://github.com/marcelog/elixir_agi",
       app: :elixir_agi,
-      version: "0.0.14",
+      version: "0.0.20",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      deps: deps
+      deps: deps()
     ]
   end
 
@@ -44,8 +44,8 @@ Find the user guide in the github repo at: https://github.com/marcelog/elixir_ag
 
   defp deps do
     [
-      {:earmark, "~> 0.1", only: :dev},
-      {:ex_doc, "~> 0.12.0", only: :dev},
+      {:earmark, "~> 1.0.3", only: :dev},
+      {:ex_doc, "~> 0.14.5", only: :dev},
     ]
   end
 end
