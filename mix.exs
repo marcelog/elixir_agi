@@ -10,8 +10,8 @@ defmodule ElixirAgi.Mixfile do
       source_url: "https://github.com/marcelog/elixir_agi",
       app: :elixir_agi,
       version: "0.0.20",
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
   end
@@ -25,9 +25,9 @@ defmodule ElixirAgi.Mixfile do
 
   defp description do
     """
-Elixir client for the Asterisk AGI protocol.
+    Elixir client for the Asterisk AGI protocol.
 
-Find the user guide in the github repo at: https://github.com/marcelog/elixir_agi.
+    Find the user guide in the github repo at: https://github.com/marcelog/elixir_agi.
     """
   end
 
@@ -45,7 +45,7 @@ Find the user guide in the github repo at: https://github.com/marcelog/elixir_ag
   defp deps do
     [
       {:earmark, "~> 1.0.3", only: :dev},
-      {:ex_doc, "~> 0.14.5", only: :dev},
+      {:ex_doc, "~> 0.14.5", only: :dev}
     ]
   end
 end
