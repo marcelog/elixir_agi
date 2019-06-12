@@ -31,6 +31,8 @@ defmodule ElixirAgi.FastAgi do
   @type t :: ElixirAgi.FastAgi
   @typep state :: Map.t()
 
+  @timeout Application.get_env(:elixir_agi, :recv_timeout, 120_000)
+
   defmacro log(level, message) do
     quote do
       state = var!(state)
@@ -149,7 +151,7 @@ defmodule ElixirAgi.FastAgi do
           end
 
           reader = fn ->
-            {:ok, read_data} = :gen_tcp.recv(socket, 0)
+            {:ok, read_data} = :gen_tcp.recv(socket, 0, @timeout)
             read_data
           end
 
