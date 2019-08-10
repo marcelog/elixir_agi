@@ -21,7 +21,7 @@ defmodule ElixirAgi.Supervisor.FastAgi do
   @doc """
   Starts the supervisor.
   """
-  @spec start_link() :: Supervisor.on_start
+  @spec start_link() :: Supervisor.on_start()
   def start_link do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -30,18 +30,26 @@ defmodule ElixirAgi.Supervisor.FastAgi do
   Starts a supervised AGI application.
   """
   @spec new(
-    module, atom, boolean, atom, String.t, Integer.t, Integer.t
-  ) :: Supervisor.on_start_child
+          module,
+          atom,
+          boolean,
+          atom,
+          String.t(),
+          Integer.t(),
+          Integer.t()
+        ) :: Supervisor.on_start_child()
   def new(app_module, app_function, debug, name, host, port, backlog) do
-    Supervisor.start_child __MODULE__, [%ElixirAgi.FastAgi{
-      name: name,
-      host: host,
-      port: port,
-      backlog: backlog,
-      debug: debug,
-      app_module: app_module,
-      app_function: app_function
-    }]
+    Supervisor.start_child(__MODULE__, [
+      %ElixirAgi.FastAgi{
+        name: name,
+        host: host,
+        port: port,
+        backlog: backlog,
+        debug: debug,
+        app_module: app_module,
+        app_function: app_function
+      }
+    ])
   end
 
   @doc """
@@ -49,7 +57,8 @@ defmodule ElixirAgi.Supervisor.FastAgi do
   """
   @spec init([]) :: {:ok, tuple}
   def init([]) do
-    Logger.debug "ElixirAgi: Starting FastAGI supervisor"
+    Logger.debug("ElixirAgi: Starting FastAGI supervisor")
+
     children = [
       worker(ElixirAgi.FastAgi, [], restart: :transient)
     ]

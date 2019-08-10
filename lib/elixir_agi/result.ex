@@ -15,24 +15,24 @@ defmodule ElixirAgi.Agi.Result do
   See the License for the specific language governing permissions and
   limitations under the License.
   """
-  defstruct \
-    code: nil,
-    success: nil,
-    result: nil,
-    extra: nil
+  defstruct code: nil,
+            success: nil,
+            result: nil,
+            extra: nil
 
   @type t :: ElixirAgi.Agi.Result
 
   @doc """
   Given a read line, parses it and returns a structure with the result.
   """
-  @spec new(String.t) :: t
+  @spec new(String.t()) :: t
   def new(line) do
-    [code, "result=" <> result|extra] = String.split line, " "
-    {code, ""} = Integer.parse code
+    [code, "result=" <> result | extra] = String.split(line, " ")
+    {code, ""} = Integer.parse(code)
+
     %ElixirAgi.Agi.Result{
       code: code,
-      success: (code === 200),
+      success: code === 200,
       result: result,
       extra: extra
     }

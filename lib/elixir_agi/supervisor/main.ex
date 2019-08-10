@@ -21,7 +21,7 @@ defmodule ElixirAgi.Supervisor.Main do
   @doc """
   Starts the supervisor
   """
-  @spec start_link() :: Supervisor.on_start
+  @spec start_link() :: Supervisor.on_start()
   def start_link do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -31,12 +31,13 @@ defmodule ElixirAgi.Supervisor.Main do
   """
   @spec init([]) :: {:ok, tuple}
   def init([]) do
-    Logger.debug "ElixirAgi: Starting main supervisor"
+    Logger.debug("ElixirAgi: Starting main supervisor")
+
     children = [
-      supervisor(ElixirAgi.Supervisor.FastAgi, [], [
+      supervisor(ElixirAgi.Supervisor.FastAgi, [],
         restart: :permanent,
         shutdown: :infinity
-      ])
+      )
     ]
 
     supervise(children, strategy: :one_for_one)
